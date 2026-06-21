@@ -14,8 +14,7 @@ local code_blocks = {}
 ---Render the full conversation in the chat buffer
 function M.render()
   local buf = panel.get_bufnr()
-  if not buf or not vim.api.nvim_buf_is_valid(buf) then return
-end
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
 
   local chat = require("parley.chat")
   local messages = chat.get_messages()
@@ -24,6 +23,8 @@ end
   code_blocks = {}
   local lines = {}
   local extmarks = {}
+  -- Track separator positions: {line = 0-based lnum, type = "user" | "assistant"}
+  local separators = {}
 
   for _, msg in ipairs(messages) do
     if msg.role == "system" then
@@ -32,8 +33,13 @@ end
     end
 
     if msg.role == "user" then
+      -- Add separator before user message (except for the very first message)
+      if #lines > 0 then
+        table.insert(separators, { line = #lines, type = "user" })
+      end
+
       -- User message header
-      table.insert(lines, "## 👤 You")
+      table.insert(lines, "👤 You")
       table.insert(lines, "")
 
       -- Extract context chips from the message (they're prepended before the actual user text)
@@ -42,13 +48,11 @@ end
 
       -- Context chips are formatted as [Current file: ...] or Selected from ... or File: ...
       -- We display them as chips, then the user's actual question
-      local context_end = 0
       local in_context = false
 
       for line in (user_text .. "\n"):gmatch("([^\n]*)\n") do
         if line:match("^%[Current file:") or line:match("^Selected from") or line:match("^File:") then
           table.insert(chip_lines, line)
-          context_end = #lines + #chip_lines + 1
           in_context = true
         elseif line == "" and in_context then
           -- End of context section
@@ -78,19 +82,19 @@ end
       end
 
       table.insert(lines, "")
-      table.insert(lines, "─" .. string.rep("─", 50))
-      table.insert(lines, "")
 
     elseif msg.role == "assistant" then
+      -- Add separator before assistant message
+      table.insert(separators, { line = #lines, type = "assistant" })
+
       -- Assistant message header
-      table.insert(lines, "## 🦙 Assistant")
+      table.insert(lines, "🦙 Assistant")
       table.insert(lines, "")
 
       -- Parse markdown and extract code blocks
       local in_code = false
       local code_lang = ""
       local code_start_line = 0
-      local code_content = {}
 
       for line in (msg.content .. "\n"):gmatch("([^\n]*)\n") do
         local lang = line:match("^```(%S+)")
@@ -128,8 +132,6 @@ end
       end
 
       table.insert(lines, "")
-      table.insert(lines, "─" .. string.rep("─", 50))
-      table.insert(lines, "")
     end
 
     ::continue::
@@ -153,28 +155,58 @@ end
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
 
-  -- Apply highlights
-  M.apply_highlights(buf, ns_id, lines)
+  -- Apply highlights and dynamic separators
+  M.apply_highlights(buf, ns_id, lines, separators)
 end
 
----Apply syntax highlights to rendered lines
+---Apply syntax highlights and dynamic separators to rendered lines
 ---@param bufnr number
 ---@param ns_id number
 ---@param lines string[]
-function M.apply_highlights(bufnr, ns_id, lines)
+---@param separators table[]
+function M.apply_highlights(bufnr, ns_id, lines, separators)
+  -- Get the panel width for dynamic separator rendering
+  local win = panel.get_winnr()
+  local panel_width = win and vim.api.nvim_win_get_width(win) or 50
+
+  -- Apply separator extmarks first (they sit on empty lines between messages)
+  for _, sep in ipairs(separators) do
+    local lnum = sep.line
+    if lnum < #lines then
+      -- Use a horizontal line character that fills the panel width dynamically
+      local sep_char = "─"
+      local sep_line = string.rep(sep_char, panel_width)
+
+      -- Set the separator line content directly
+      vim.bo[bufnr].modifiable = true
+      vim.api.nvim_buf_set_lines(bufnr, lnum, lnum, false, { sep_line })
+      vim.bo[bufnr].modifiable = false
+
+      -- Apply highlight
+      vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
+        end_col = #sep_line,
+        hl_group = "ParleySeparator",
+        priority = 10,
+      })
+    end
+  end
+
+  -- Apply line-level highlights
   for i, line in ipairs(lines) do
     local lnum = i - 1  -- 0-based
 
     -- User/Assistant headers
-    if line:match("^## 👤") then
+    if line:match("^👤") then
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
         hl_group = "ParleyUser",
+        priority = 20,
       })
-    elseif line:match("^## 🦙") then
+    elseif line:match("^🦙") then
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
         hl_group = "ParleyAssistant",
+        priority = 20,
       })
     end
 
@@ -183,6 +215,7 @@ function M.apply_highlights(bufnr, ns_id, lines)
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
         hl_group = "ParleyChip",
+        priority = 20,
       })
     end
 
@@ -193,6 +226,7 @@ function M.apply_highlights(bufnr, ns_id, lines)
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, s - 1, {
           end_col = e,
           hl_group = "ParleyActionApply",
+          priority = 30,
         })
       end
       s, e = line:match("()%[Copy%]()")
@@ -200,6 +234,7 @@ function M.apply_highlights(bufnr, ns_id, lines)
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, s - 1, {
           end_col = e,
           hl_group = "ParleyActionCopy",
+          priority = 30,
         })
       end
       s, e = line:match("()%[Diff%]()")
@@ -207,16 +242,9 @@ function M.apply_highlights(bufnr, ns_id, lines)
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, s - 1, {
           end_col = e,
           hl_group = "ParleyActionDiff",
+          priority = 30,
         })
       end
-    end
-
-    -- Separators
-    if line:match("^─+") then
-      vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
-        end_col = #line,
-        hl_group = "ParleySeparator",
-      })
     end
   end
 end
