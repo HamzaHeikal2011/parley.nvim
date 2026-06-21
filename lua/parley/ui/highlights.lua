@@ -39,6 +39,11 @@ function M.setup()
   vim.api.nvim_set_hl(0, "ParleyHint", { link = "Comment", default = true })
   vim.api.nvim_set_hl(0, "ParleyHintAction", { link = "Function", default = true })
 
+  -- Welcome screen
+  vim.api.nvim_set_hl(0, "ParleyWelcome", { link = "Title", default = true })
+  vim.api.nvim_set_hl(0, "ParleyWelcomeKey", { link = "Special", default = true })
+  vim.api.nvim_set_hl(0, "ParleyWelcomeSection", { link = "Type", default = true })
+
   -- Input area
   vim.api.nvim_set_hl(0, "ParleyInputPrompt", { link = "Identifier", default = true })
 end

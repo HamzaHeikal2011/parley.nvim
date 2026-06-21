@@ -139,13 +139,20 @@ function M.render()
 
   -- If no messages yet, show a welcome message
   if #messages <= 1 then  -- only system prompt
-    table.insert(lines, "Welcome to Parley!")
+    local cfg = require("parley.config").get()
+    table.insert(lines, "🦙 Welcome to Parley")
     table.insert(lines, "")
-    table.insert(lines, "Usage:")
-    table.insert(lines, "  • Select code in visual mode, then press " .. require("parley.config").get().keymaps.attach_selection .. " to attach it")
-    table.insert(lines, "  • Press 'i' or 'a' in this panel to open the input")
-    table.insert(lines, "  • Type your question and press Ctrl+Enter to send")
-    table.insert(lines, "  • Code blocks in responses have [Apply] [Copy] [Diff] actions")
+    table.insert(lines, "Quick start:")
+    table.insert(lines, string.format("  • %s  Attach selection (visual mode)", cfg.keymaps.attach_selection))
+    table.insert(lines, string.format("  • %s  Attach buffer", cfg.keymaps.attach_buffer))
+    table.insert(lines, string.format("  • i  Open input — type question — %s to send", cfg.keymaps.submit))
+    table.insert(lines, "")
+    table.insert(lines, "Code block actions:")
+    table.insert(lines, string.format("  • %s  Apply code to editor", cfg.keymaps.apply_code))
+    table.insert(lines, string.format("  • %s  Copy code to clipboard", cfg.keymaps.copy_code))
+    table.insert(lines, string.format("  • %s  Show diff", cfg.keymaps.show_diff))
+    table.insert(lines, "")
+    table.insert(lines, string.format("  • %s  Clear conversation  • %s  Close panel", cfg.keymaps.clear_conversation, cfg.keymaps.close))
     table.insert(lines, "")
   end
 
@@ -244,6 +251,36 @@ function M.apply_highlights(bufnr, ns_id, lines, separators)
           hl_group = "ParleyActionDiff",
           priority = 30,
         })
+      end
+    end
+
+    -- Welcome screen highlights
+    if line:match("^🦙 Welcome") then
+      vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
+        end_col = #line,
+        hl_group = "ParleyWelcome",
+        priority = 20,
+      })
+    end
+    if line:match("^Quick start:") or line:match("^Code block actions:") then
+      vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
+        end_col = #line,
+        hl_group = "ParleyWelcomeSection",
+        priority = 20,
+      })
+    end
+    -- Highlight keybindings in welcome screen (e.g., "<leader>oa", "<C-y>")
+    if line:match("•") then
+      local key = line:match("(%S+)%s")
+      if key then
+        local _, end_col = line:find(key, 1, true)
+        if end_col then
+          vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
+            end_col = end_col,
+            hl_group = "ParleyWelcomeKey",
+            priority = 25,
+          })
+        end
       end
     end
   end
