@@ -172,12 +172,43 @@ end
 function M.render_winbar()
   local chat = require("parley.chat")
   local model = chat.get_model()
-  local status = chat.is_active() and " ●" or ""
+  local status = chat.is_active() and M.spinner_char .. " Working" or ""
   return string.format(
     " %%#ParleyTitle#🦙 Parley%%#ParleyBar# │ %%#ParleyModel#%s%s %%*",
     model,
     status
   )
+end
+
+---Spinner animation state
+local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+local spinner_index = 1
+local spinner_timer = nil
+
+---Start the spinner animation
+function M.start_spinner()
+  if spinner_timer then return end
+  spinner_timer = vim.uv.new_timer()
+  spinner_timer:start(0, 80, vim.schedule_wrap(function()
+    spinner_index = (spinner_index % #spinner_frames) + 1
+    M.update_winbar()
+  end))
+end
+
+---Stop the spinner animation
+function M.stop_spinner()
+  if spinner_timer then
+    spinner_timer:stop()
+    spinner_timer:close()
+    spinner_timer = nil
+  end
+  M.update_winbar()
+end
+
+---Get the current spinner character
+---@return string
+function M.spinner_char()
+  return spinner_frames[spinner_index]
 end
 
 ---Update the winbar (e.g. when model changes or status changes)

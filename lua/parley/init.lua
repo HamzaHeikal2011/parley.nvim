@@ -100,6 +100,7 @@ function M.send_message(text)
 
   -- Show streaming indicator
   conversation.show_streaming_indicator()
+  panel.start_spinner()
 
   -- Get the session for the API call
   local session = chat.get_session()
@@ -122,6 +123,7 @@ function M.send_message(text)
     -- on_done
     function()
       cancel_current = nil
+      panel.stop_spinner()
       panel.update_winbar()
 
       -- Store the full accumulated response in the session
@@ -140,6 +142,7 @@ function M.send_message(text)
     function(err)
       cancel_current = nil
       accumulated_response = {}
+      panel.stop_spinner()
       conversation.remove_streaming_indicator()
       panel.update_winbar()
       panel.update_statusline()
