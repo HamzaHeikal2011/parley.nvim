@@ -1,6 +1,6 @@
 local M = {}
 
-local panel = require("ollama-chat.ui.panel")
+local panel = require("parley.ui.panel")
 
 ---@class RenderedCodeBlock
 ---@field start_line number 0-based line number of ``` line
@@ -17,7 +17,7 @@ function M.render()
   if not buf or not vim.api.nvim_buf_is_valid(buf) then return
 end
 
-  local chat = require("ollama-chat.chat")
+  local chat = require("parley.chat")
   local messages = chat.get_messages()
   local ns_id = panel.get_ns_id()
 
@@ -137,10 +137,10 @@ end
 
   -- If no messages yet, show a welcome message
   if #messages <= 1 then  -- only system prompt
-    table.insert(lines, "Welcome to Ollama Chat!")
+    table.insert(lines, "Welcome to Parley!")
     table.insert(lines, "")
     table.insert(lines, "Usage:")
-    table.insert(lines, "  • Select code in visual mode, then press " .. require("ollama-chat.config").get().keymaps.attach_selection .. " to attach it")
+    table.insert(lines, "  • Select code in visual mode, then press " .. require("parley.config").get().keymaps.attach_selection .. " to attach it")
     table.insert(lines, "  • Press 'i' or 'a' in this panel to open the input")
     table.insert(lines, "  • Type your question and press Ctrl+Enter to send")
     table.insert(lines, "  • Code blocks in responses have [Apply] [Copy] [Diff] actions")
@@ -169,12 +169,12 @@ function M.apply_highlights(bufnr, ns_id, lines)
     if line:match("^## 👤") then
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
-        hl_group = "OllamaChatUser",
+        hl_group = "ParleyUser",
       })
     elseif line:match("^## 🦙") then
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
-        hl_group = "OllamaChatAssistant",
+        hl_group = "ParleyAssistant",
       })
     end
 
@@ -182,7 +182,7 @@ function M.apply_highlights(bufnr, ns_id, lines)
     if line:match("^%s*📎") then
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
-        hl_group = "OllamaChatChip",
+        hl_group = "ParleyChip",
       })
     end
 
@@ -192,21 +192,21 @@ function M.apply_highlights(bufnr, ns_id, lines)
       if s then
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, s - 1, {
           end_col = e,
-          hl_group = "OllamaChatActionApply",
+          hl_group = "ParleyActionApply",
         })
       end
       s, e = line:match("()%[Copy%]()")
       if s then
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, s - 1, {
           end_col = e,
-          hl_group = "OllamaChatActionCopy",
+          hl_group = "ParleyActionCopy",
         })
       end
       s, e = line:match("()%[Diff%]()")
       if s then
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, s - 1, {
           end_col = e,
-          hl_group = "OllamaChatActionDiff",
+          hl_group = "ParleyActionDiff",
         })
       end
     end
@@ -215,7 +215,7 @@ function M.apply_highlights(bufnr, ns_id, lines)
     if line:match("^─+") then
       vim.api.nvim_buf_set_extmark(bufnr, ns_id, lnum, 0, {
         end_col = #line,
-        hl_group = "OllamaChatSeparator",
+        hl_group = "ParleySeparator",
       })
     end
   end

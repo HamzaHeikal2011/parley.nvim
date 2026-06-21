@@ -1,4 +1,4 @@
-# ollama-chat.nvim
+# parley.nvim
 
 A Neovim plugin that provides a **persistent side-panel chat interface** for Ollama local LLM models.
 
@@ -26,18 +26,18 @@ Inspired by Cursor's side panel, Claude Code's VS Code extension, and Windsurf's
 
 ```lua
 {
-  "yourname/ollama-chat.nvim",
+  "yourname/parley.nvim",
   event = "VeryLazy",
   opts = {
     url = "http://127.0.0.1:11434",
     model = "qwen2.5-coder:7b",
   },
   keys = {
-    { "<leader>oc", "<cmd>OllamaChat<cr>", desc = "Ollama Chat" },
-    { "<leader>oa", "<cmd>OllamaChatAttach<cr>", desc = "Attach selection", mode = "v" },
-    { "<leader>ob", "<cmd>OllamaChatAttachBuffer<cr>", desc = "Attach buffer" },
-    { "<leader>ox", "<cmd>OllamaChatClearContext<cr>", desc = "Clear context" },
-    { "<leader>om", "<cmd>OllamaChatModel<cr>", desc = "Switch model" },
+    { "<leader>oc", "<cmd>Parley<cr>", desc = "Parley" },
+    { "<leader>oa", "<cmd>ParleyAttach<cr>", desc = "Attach selection", mode = "v" },
+    { "<leader>ob", "<cmd>ParleyAttachBuffer<cr>", desc = "Attach buffer" },
+    { "<leader>ox", "<cmd>ParleyClearContext<cr>", desc = "Clear context" },
+    { "<leader>om", "<cmd>ParleyModel<cr>", desc = "Switch model" },
   },
 }
 ```
@@ -90,18 +90,18 @@ opts = {
 
 | Command | Description |
 |---|---|
-| `:OllamaChat` | Toggle chat panel |
-| `:OllamaChatAttach` | Attach visual selection |
-| `:OllamaChatAttachBuffer` | Attach entire buffer |
-| `:OllamaChatClearContext` | Clear context chips |
-| `:OllamaChatModel` | Switch model |
-| `:OllamaChatStop` | Stop generation |
-| `:OllamaChatClear` | Clear conversation |
+| `:Parley` | Toggle chat panel |
+| `:ParleyAttach` | Attach visual selection |
+| `:ParleyAttachBuffer` | Attach entire buffer |
+| `:ParleyClearContext` | Clear context chips |
+| `:ParleyModel` | Switch model |
+| `:ParleyStop` | Stop generation |
+| `:ParleyClear` | Clear conversation |
 
 ## Health Check
 
 ```
-:checkhealth ollama-chat
+:checkhealth parley
 ```
 
 ## License

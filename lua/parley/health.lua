@@ -1,10 +1,10 @@
 local M = {}
 
-local config = require("ollama-chat.config")
-local http = require("ollama-chat.http")
+local config = require("parley.config")
+local http = require("parley.http")
 
 function M.check()
-  vim.health.start("ollama-chat.nvim")
+  vim.health.start("parley.nvim")
 
   -- Check Neovim version
   local version = vim.version()

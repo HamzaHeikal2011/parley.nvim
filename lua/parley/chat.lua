@@ -4,23 +4,23 @@ local M = {}
 ---@field role "system" | "user" | "assistant"
 ---@field content string
 
----@class OllamaChat.Session
+---@class Parley.Session
 ---@field messages OllamaMessage[]
 ---@field model string
 ---@field bufnr number The buffer this session is associated with
 ---@field cancel_fn fun()|nil Cancel function for in-flight request
 
----@type table<number, OllamaChat.Session>
+---@type table<number, Parley.Session>
 local sessions = {}
 
 ---Get or create a session for a buffer
 ---@param bufnr number|nil
----@return OllamaChat.Session
+---@return Parley.Session
 function M.get_session(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
 
   if not sessions[bufnr] then
-    local cfg = require("ollama-chat.config").get()
+    local cfg = require("parley.config").get()
     sessions[bufnr] = {
       messages = {},
       model = cfg.model,
@@ -115,7 +115,7 @@ end
 ---@param user_text string
 ---@return string
 function M.build_user_message(user_text)
-  local chips = require("ollama-chat.context_chips")
+  local chips = require("parley.context_chips")
   local context = chips.build_context()
 
   if context == "" then

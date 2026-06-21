@@ -1,6 +1,6 @@
 local M = {}
 
-local panel = require("ollama-chat.ui.panel")
+local panel = require("parley.ui.panel")
 
 ---Get the code text from a code block in the chat buffer
 ---@param block table RenderedCodeBlock
@@ -22,7 +22,7 @@ end
 
 ---Apply the code block under the cursor to the editor
 function M.apply_under_cursor()
-  local conv = require("ollama-chat.ui.conversation")
+  local conv = require("parley.ui.conversation")
   local win = panel.get_winnr()
   if not win or not vim.api.nvim_win_is_valid(win) then return end
 
@@ -31,18 +31,18 @@ function M.apply_under_cursor()
 
   local block = conv.find_code_block_at(line)
   if not block then
-    vim.notify("No code block under cursor", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("No code block under cursor", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   local code = M.get_code_from_block(block)
   if not code or code == "" then
-    vim.notify("Could not extract code from block", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("Could not extract code from block", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   -- Find the target: check context chips for a selection target
-  local chips = require("ollama-chat.context_chips").get_all()
+  local chips = require("parley.context_chips").get_all()
   local target_chip = nil
   for _, chip in ipairs(chips) do
     if chip.type == "selection" and chip.bufnr and chip.start_line then
@@ -64,7 +64,7 @@ function M.apply_under_cursor()
     vim.notify(
       string.format("Applied to %s (lines %d-%d)", target_chip.label, target_chip.start_line, target_chip.end_line),
       vim.log.levels.INFO,
-      { title = "Ollama Chat" }
+      { title = "Parley" }
     )
   else
     -- No target selection — insert at cursor in the editor
@@ -80,16 +80,16 @@ function M.apply_under_cursor()
         false,
         code_lines
       )
-      vim.notify("Inserted at cursor", vim.log.levels.INFO, { title = "Ollama Chat" })
+      vim.notify("Inserted at cursor", vim.log.levels.INFO, { title = "Parley" })
     else
-      vim.notify("No editor window found to apply code", vim.log.levels.WARN, { title = "Ollama Chat" })
+      vim.notify("No editor window found to apply code", vim.log.levels.WARN, { title = "Parley" })
     end
   end
 end
 
 ---Copy the code block under cursor to the system clipboard
 function M.copy_under_cursor()
-  local conv = require("ollama-chat.ui.conversation")
+  local conv = require("parley.ui.conversation")
   local win = panel.get_winnr()
   if not win or not vim.api.nvim_win_is_valid(win) then return end
 
@@ -98,25 +98,25 @@ function M.copy_under_cursor()
 
   local block = conv.find_code_block_at(line)
   if not block then
-    vim.notify("No code block under cursor", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("No code block under cursor", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   local code = M.get_code_from_block(block)
   if not code or code == "" then
-    vim.notify("Could not extract code from block", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("Could not extract code from block", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   -- Copy to clipboard
   vim.fn.setreg("+", code)
   vim.fn.setreg('"', code)
-  vim.notify("Code copied to clipboard", vim.log.levels.INFO, { title = "Ollama Chat" })
+  vim.notify("Code copied to clipboard", vim.log.levels.INFO, { title = "Parley" })
 end
 
 ---Show a diff between the code block and the target selection
 function M.diff_under_cursor()
-  local conv = require("ollama-chat.ui.conversation")
+  local conv = require("parley.ui.conversation")
   local win = panel.get_winnr()
   if not win or not vim.api.nvim_win_is_valid(win) then return end
 
@@ -125,18 +125,18 @@ function M.diff_under_cursor()
 
   local block = conv.find_code_block_at(line)
   if not block then
-    vim.notify("No code block under cursor", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("No code block under cursor", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   local code = M.get_code_from_block(block)
   if not code or code == "" then
-    vim.notify("Could not extract code from block", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("Could not extract code from block", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   -- Find target
-  local chips = require("ollama-chat.context_chips").get_all()
+  local chips = require("parley.context_chips").get_all()
   local target_chip = nil
   for _, chip in ipairs(chips) do
     if chip.type == "selection" and chip.bufnr and chip.start_line then
@@ -146,12 +146,12 @@ function M.diff_under_cursor()
   end
 
   if not target_chip then
-    vim.notify("No selection context to diff against. Attach a selection first.", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("No selection context to diff against. Attach a selection first.", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
   if not vim.api.nvim_buf_is_valid(target_chip.bufnr) then
-    vim.notify("Target buffer no longer exists", vim.log.levels.ERROR, { title = "Ollama Chat" })
+    vim.notify("Target buffer no longer exists", vim.log.levels.ERROR, { title = "Parley" })
     return
   end
 
@@ -201,7 +201,7 @@ function M.diff_under_cursor()
       new_content
     )
     vim.cmd("tabclose")
-    vim.notify("Changes applied", vim.log.levels.INFO, { title = "Ollama Chat" })
+    vim.notify("Changes applied", vim.log.levels.INFO, { title = "Parley" })
   end, "Accept changes")
 
   -- Reject: close diff

@@ -1,12 +1,12 @@
 local M = {}
 
-local config = require("ollama-chat.config")
-local http = require("ollama-chat.http")
-local chat = require("ollama-chat.chat")
-local panel = require("ollama-chat.ui.panel")
-local conversation = require("ollama-chat.ui.conversation")
-local input = require("ollama-chat.ui.input")
-local highlights = require("ollama-chat.ui.highlights")
+local config = require("parley.config")
+local http = require("parley.http")
+local chat = require("parley.chat")
+local panel = require("parley.ui.panel")
+local conversation = require("parley.ui.conversation")
+local input = require("parley.ui.input")
+local highlights = require("parley.ui.highlights")
 
 ---@type fun()|nil
 local cancel_current = nil
@@ -26,7 +26,7 @@ end
 
 ---Set up autocommands
 function M.setup_autocmds()
-  local group = vim.api.nvim_create_augroup("OllamaChat", { clear = true })
+  local group = vim.api.nvim_create_augroup("Parley", { clear = true })
 
   -- Re-apply highlights when colorscheme changes
   vim.api.nvim_create_autocmd("ColorScheme", {
@@ -54,19 +54,19 @@ end
 
 ---Attach the current visual selection as context
 function M.attach_selection()
-  local chips = require("ollama-chat.context_chips")
+  local chips = require("parley.context_chips")
   chips.add_selection()
 end
 
 ---Attach the current buffer as context
 function M.attach_buffer()
-  local chips = require("ollama-chat.context_chips")
+  local chips = require("parley.context_chips")
   chips.add_buffer()
 end
 
 ---Clear all context chips
 function M.clear_context()
-  local chips = require("ollama-chat.context_chips")
+  local chips = require("parley.context_chips")
   chips.clear()
 end
 
@@ -139,7 +139,7 @@ function M.send_message(text)
       cancel_current = nil
       conversation.remove_streaming_indicator()
       panel.update_winbar()
-      vim.notify("Error: " .. err, vim.log.levels.ERROR, { title = "Ollama Chat" })
+      vim.notify("Error: " .. err, vim.log.levels.ERROR, { title = "Parley" })
     end
   )
 
@@ -220,14 +220,14 @@ function M.stop()
   end
   conversation.remove_streaming_indicator()
   panel.update_winbar()
-  vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Ollama Chat" })
+  vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Parley" })
 end
 
 ---Clear the conversation
 function M.clear()
   chat.clear_session()
   conversation.render()
-  vim.notify("Conversation cleared", vim.log.levels.INFO, { title = "Ollama Chat" })
+  vim.notify("Conversation cleared", vim.log.levels.INFO, { title = "Parley" })
 end
 
 ---Switch the model
@@ -236,12 +236,12 @@ function M.switch_model()
 
   http.list_models(cfg.url, function(models, err)
     if err then
-      vim.notify("Failed to list models: " .. err, vim.log.levels.ERROR, { title = "Ollama Chat" })
+      vim.notify("Failed to list models: " .. err, vim.log.levels.ERROR, { title = "Parley" })
       return
     end
 
     if not models or #models == 0 then
-      vim.notify("No models found. Is Ollama running?", vim.log.levels.WARN, { title = "Ollama Chat" })
+      vim.notify("No models found. Is Ollama running?", vim.log.levels.WARN, { title = "Parley" })
       return
     end
 
@@ -257,7 +257,7 @@ function M.switch_model()
       if selected then
         chat.set_model(nil, selected)
         panel.update_winbar()
-        vim.notify("Model: " .. selected, vim.log.levels.INFO, { title = "Ollama Chat" })
+        vim.notify("Model: " .. selected, vim.log.levels.INFO, { title = "Parley" })
       end
     end)
   end)

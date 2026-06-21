@@ -1,6 +1,6 @@
 local M = {}
 
----@class OllamaChat.Selection
+---@class Parley.Selection
 ---@field text string The selected text
 ---@field start_line number 1-based start line
 ---@field start_col number 1-based start col
@@ -10,7 +10,7 @@ local M = {}
 
 ---Get the current visual selection with position info.
 ---Works in visual, visual-line, and visual-block modes.
----@return OllamaChat.Selection|nil
+---@return Parley.Selection|nil
 function M.get_visual_selection()
   -- Check if we have a valid selection
   local mode = vim.fn.visualmode()
@@ -125,7 +125,7 @@ function M.get_buffer_content(max_lines)
 end
 
 ---Build a context string from a selection for the LLM
----@param sel OllamaChat.Selection
+---@param sel Parley.Selection
 ---@return string
 function M.format_selection_context(sel)
   local ft = M.get_filetype()

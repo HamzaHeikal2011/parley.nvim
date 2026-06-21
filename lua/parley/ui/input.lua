@@ -1,6 +1,6 @@
 local M = {}
 
-local panel = require("ollama-chat.ui.panel")
+local panel = require("parley.ui.panel")
 
 local state = {
   bufnr = nil,
@@ -18,7 +18,7 @@ function M.open()
 
   local chat_win = panel.get_winnr()
   if not chat_win or not vim.api.nvim_win_is_valid(chat_win) then
-    vim.notify("Chat panel is not open", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("Chat panel is not open", vim.log.levels.WARN, { title = "Parley" })
     return
   end
 
@@ -29,7 +29,7 @@ function M.open()
   vim.cmd("belowright split")
 
   local input_win = vim.api.nvim_get_current_win()
-  local cfg = require("ollama-chat.config").get()
+  local cfg = require("parley.config").get()
 
   -- Set height
   vim.api.nvim_win_set_height(input_win, 3)
@@ -39,7 +39,7 @@ function M.open()
   vim.api.nvim_win_set_buf(input_win, buf)
 
   vim.bo[buf].buftype = "prompt"
-  vim.bo[buf].filetype = "ollama-chat-input"
+  vim.bo[buf].filetype = "parley-input"
   vim.bo[buf].swapfile = false
 
   -- Set up prompt
@@ -88,8 +88,8 @@ function M.open()
 
   -- Stop generation
   map("i", cfg.keymaps.stop or "<C-c>", function()
-    require("ollama-chat.chat").cancel()
-    vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Ollama Chat" })
+    require("parley.chat").cancel()
+    vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Parley" })
   end, "Stop generation")
 
   state.bufnr = buf
@@ -145,7 +145,7 @@ function M.submit()
   M.close_input()
 
   -- Send to the chat module
-  local chat_mod = require("ollama-chat")
+  local chat_mod = require("parley")
   chat_mod.send_message(text)
 end
 

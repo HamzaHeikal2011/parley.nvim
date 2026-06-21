@@ -1,10 +1,10 @@
-*ollama-chat.txt*  Side-by-side Ollama chat panel for Neovim
+*parley.txt*  Side-by-side Ollama chat panel for Neovim
 
 Author:  Hamza
 License: MIT
 
 ==============================================================================
-INTRODUCTION                                          *ollama-chat*
+INTRODUCTION                                          *parley*
 
 A Neovim plugin that provides a persistent side-panel chat interface
 for Ollama local LLM models. Inspired by Cursor's side panel, Claude Code's
@@ -20,36 +20,36 @@ Features:
 - Works out of the box, no setup() required
 
 ==============================================================================
-REQUIREMENTS                                        *ollama-chat-requirements*
+REQUIREMENTS                                        *parley-requirements*
 
 - Neovim >= 0.10
 - curl (Ollama users typically have this)
 - Ollama server running locally
 
 ==============================================================================
-INSTALLATION                                        *ollama-chat-installation*
+INSTALLATION                                        *parley-installation*
 
 Using lazy.nvim:
 >lua
   {
-    "yourname/ollama-chat.nvim",
+    "yourname/parley.nvim",
     event = "VeryLazy",
     opts = {
       url = "http://127.0.0.1:11434",
       model = "qwen2.5-coder:7b",
     },
     keys = {
-      { "<leader>oc", "<cmd>OllamaChat<cr>", desc = "Ollama Chat" },
-      { "<leader>oa", "<cmd>OllamaChatAttach<cr>", desc = "Attach selection", mode = "v" },
-      { "<leader>ob", "<cmd>OllamaChatAttachBuffer<cr>", desc = "Attach buffer" },
-      { "<leader>ox", "<cmd>OllamaChatClearContext<cr>", desc = "Clear context" },
-      { "<leader>om", "<cmd>OllamaChatModel<cr>", desc = "Switch model" },
+      { "<leader>oc", "<cmd>Parley<cr>", desc = "Parley" },
+      { "<leader>oa", "<cmd>ParleyAttach<cr>", desc = "Attach selection", mode = "v" },
+      { "<leader>ob", "<cmd>ParleyAttachBuffer<cr>", desc = "Attach buffer" },
+      { "<leader>ox", "<cmd>ParleyClearContext<cr>", desc = "Clear context" },
+      { "<leader>om", "<cmd>ParleyModel<cr>", desc = "Switch model" },
     },
   }
 <
 
 ==============================================================================
-CONFIGURATION                                       *ollama-chat-config*
+CONFIGURATION                                       *parley-config*
 
 Full configuration options:
 >lua
@@ -81,9 +81,9 @@ Full configuration options:
 <
 
 ==============================================================================
-COMMANDS                                            *ollama-chat-commands*
+COMMANDS                                            *parley-commands*
 
-:OllamaChat [subcommand]                            *:OllamaChat*
+:Parley [subcommand]                            *:Parley*
     Main command. Subcommands:
     - open (default) — Open the chat panel
     - close           — Close the chat panel
@@ -95,26 +95,26 @@ COMMANDS                                            *ollama-chat-commands*
     - attach          — Attach selection/buffer
     - context_clear   — Clear context chips
 
-:OllamaChatAttach                                   *:OllamaChatAttach*
+:ParleyAttach                                   *:ParleyAttach*
     Attach current visual selection as a context chip.
 
-:OllamaChatAttachBuffer                             *:OllamaChatAttachBuffer*
+:ParleyAttachBuffer                             *:ParleyAttachBuffer*
     Attach the entire current buffer as a context chip.
 
-:OllamaChatClearContext                             *:OllamaChatClearContext*
+:ParleyClearContext                             *:ParleyClearContext*
     Remove all context chips.
 
-:OllamaChatModel                                    *:OllamaChatModel*
+:ParleyModel                                    *:ParleyModel*
     Select a different Ollama model.
 
-:OllamaChatStop                                     *:OllamaChatStop*
+:ParleyStop                                     *:ParleyStop*
     Stop the current generation.
 
-:OllamaChatClear                                    *:OllamaChatClear*
+:ParleyClear                                    *:ParleyClear*
     Clear the conversation history.
 
 ==============================================================================
-KEYMAPS                                             *ollama-chat-keymaps*
+KEYMAPS                                             *parley-keymaps*
 
 Default keymaps (in normal mode unless specified):
 
@@ -140,31 +140,31 @@ Inside the input area:
 <C-c>               Stop generation
 
 ==============================================================================
-PLUG MAPPINGS                                       *ollama-chat-plug*
+PLUG MAPPINGS                                       *parley-plug*
 
-<Plug>(OllamaChat)              Toggle chat panel
-<Plug>(OllamaChatAttach)        Attach selection (visual mode)
-<Plug>(OllamaChatAttachBuffer)  Attach buffer
-<Plug>(OllamaChatClearContext)  Clear context
-<Plug>(OllamaChatModel)         Switch model
+<Plug>(Parley)              Toggle chat panel
+<Plug>(ParleyAttach)        Attach selection (visual mode)
+<Plug>(ParleyAttachBuffer)  Attach buffer
+<Plug>(ParleyClearContext)  Clear context
+<Plug>(ParleyModel)         Switch model
 
 Example custom mapping:
 >lua
-  vim.keymap.set("n", "<C-s>", "<Plug>(OllamaChat)")
-  vim.keymap.set("v", "<C-s>", "<Plug>(OllamaChatAttach)")
+  vim.keymap.set("n", "<C-s>", "<Plug>(Parley)")
+  vim.keymap.set("v", "<C-s>", "<Plug>(ParleyAttach)")
 <
 
 ==============================================================================
-HEALTH CHECK                                        *ollama-chat-health*
+HEALTH CHECK                                        *parley-health*
 
-Run :checkhealth ollama-chat to verify:
+Run :checkhealth parley to verify:
 - Neovim version
 - curl availability
 - Ollama server reachability
 - Available models
 
 ==============================================================================
-WORKFLOW                                            *ollama-chat-workflow*
+WORKFLOW                                            *parley-workflow*
 
 1. Select code in visual mode
 2. Press <leader>oa to attach selection (shows as a chip)
@@ -180,11 +180,11 @@ WORKFLOW                                            *ollama-chat-workflow*
 9. Keep the conversation going with follow-up questions
 
 ==============================================================================
-API                                                 *ollama-chat-api*
+API                                                 *parley-api*
 
 Lua API for programmatic use:
 >lua
-  local chat = require("ollama-chat")
+  local chat = require("parley")
 
   chat.toggle()                     -- Toggle panel
   chat.attach_selection()           -- Attach visual selection

@@ -19,7 +19,7 @@ function M.get_or_create_buf()
   end
 
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_name(buf, "[Ollama Chat]")
+  vim.api.nvim_buf_set_name(buf, "[Parley]")
 
   -- Buffer options
   vim.bo[buf].buftype = "nofile"
@@ -35,7 +35,7 @@ end
 
 ---Open or toggle the side panel
 function M.open()
-  local cfg = require("ollama-chat.config").get()
+  local cfg = require("parley.config").get()
 
   -- If already visible, close it
   if state.is_visible and state.winnr and vim.api.nvim_win_is_valid(state.winnr) then
@@ -84,13 +84,13 @@ function M.open()
   vim.wo[chat_win].winbar = M.render_winbar()
 
   -- Create namespace for extmarks
-  state.ns_id = vim.api.nvim_create_namespace("ollama_chat")
+  state.ns_id = vim.api.nvim_create_namespace("parley")
 
   state.winnr = chat_win
   state.is_visible = true
 
   -- Render the conversation
-  require("ollama-chat.ui.conversation").render()
+  require("parley.ui.conversation").render()
 
   -- Set up buffer-local keymaps
   M.setup_keymaps(buf)
@@ -162,11 +162,11 @@ end
 ---Render the winbar (top bar of the panel)
 ---@return string
 function M.render_winbar()
-  local chat = require("ollama-chat.chat")
+  local chat = require("parley.chat")
   local model = chat.get_model()
   local status = chat.is_active() and " ●" or ""
   return string.format(
-    " %%#OllamaChatTitle#🦙 Ollama Chat%%#OllamaChatBar# │ %%#OllamaChatModel#%s%s %%*",
+    " %%#ParleyTitle#🦙 Parley%%#ParleyBar# │ %%#ParleyModel#%s%s %%*",
     model,
     status
   )
@@ -182,7 +182,7 @@ end
 ---Set up buffer-local keymaps for the chat panel
 ---@param bufnr number
 function M.setup_keymaps(bufnr)
-  local cfg = require("ollama-chat.config").get()
+  local cfg = require("parley.config").get()
   local km = cfg.keymaps
 
   local function map(mode, lhs, rhs, desc)
@@ -199,38 +199,38 @@ function M.setup_keymaps(bufnr)
 
   -- Clear conversation
   map("n", km.clear_conversation or "<C-l>", function()
-    require("ollama-chat.chat").clear_session()
-    require("ollama-chat.ui.conversation").render()
+    require("parley.chat").clear_session()
+    require("parley.ui.conversation").render()
   end, "Clear conversation")
 
   -- Stop generation
   map("n", km.stop or "<C-c>", function()
-    require("ollama-chat.chat").cancel()
-    vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Ollama Chat" })
+    require("parley.chat").cancel()
+    vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Parley" })
   end, "Stop generation")
 
   -- Open input
   map("n", "i", function()
-    require("ollama-chat.ui.input").open()
+    require("parley.ui.input").open()
   end, "Open input")
 
   map("n", "a", function()
-    require("ollama-chat.ui.input").open()
+    require("parley.ui.input").open()
   end, "Open input (append)")
 
   -- Apply code block under cursor
   map("n", km.apply_code or "<C-y>", function()
-    require("ollama-chat.ui.diff").apply_under_cursor()
+    require("parley.ui.diff").apply_under_cursor()
   end, "Apply code block")
 
   -- Copy code block under cursor
   map("n", km.copy_code or "<C-d>", function()
-    require("ollama-chat.ui.diff").copy_under_cursor()
+    require("parley.ui.diff").copy_under_cursor()
   end, "Copy code block")
 
   -- Show diff for code block under cursor
   map("n", km.show_diff or "<C-f>", function()
-    require("ollama-chat.ui.diff").diff_under_cursor()
+    require("parley.ui.diff").diff_under_cursor()
   end, "Show diff for code block")
 end
 

@@ -1,6 +1,6 @@
 local M = {}
 
----@class OllamaChat.ContextChip
+---@class Parley.ContextChip
 ---@field id string Unique ID
 ---@field type "selection" | "buffer" | "file" | "lines"
 ---@field label string Display label
@@ -10,7 +10,7 @@ local M = {}
 ---@field start_line number|nil
 ---@field end_line number|nil
 
----@type OllamaChat.ContextChip[]
+---@type Parley.ContextChip[]
 local chips = {}
 
 local id_counter = 0
@@ -23,15 +23,15 @@ end
 ---Add a context chip from visual selection
 ---@return boolean true if a chip was added
 function M.add_selection()
-  local ctx = require("ollama-chat.context")
+  local ctx = require("parley.context")
   local sel = ctx.get_visual_selection()
   if not sel or sel.text == "" then
-    vim.notify("No selection to attach", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("No selection to attach", vim.log.levels.WARN, { title = "Parley" })
     return false
   end
 
   local ft = ctx.get_filetype()
-  local cfg = require("ollama-chat.config").get()
+  local cfg = require("parley.config").get()
   local text = sel.text
 
   -- Truncate if too many lines
@@ -44,7 +44,7 @@ function M.add_selection()
   -- Check for duplicates
   for _, existing in ipairs(chips) do
     if existing.content == text then
-      vim.notify("Selection already attached", vim.log.levels.INFO, { title = "Ollama Chat" })
+      vim.notify("Selection already attached", vim.log.levels.INFO, { title = "Parley" })
       return false
     end
   end
@@ -61,27 +61,27 @@ function M.add_selection()
   }
 
   table.insert(chips, chip)
-  vim.notify(string.format("Attached: %s", chip.label), vim.log.levels.INFO, { title = "Ollama Chat" })
+  vim.notify(string.format("Attached: %s", chip.label), vim.log.levels.INFO, { title = "Parley" })
   return true
 end
 
 ---Add a context chip from the entire buffer
 ---@return boolean
 function M.add_buffer()
-  local ctx = require("ollama-chat.context")
-  local cfg = require("ollama-chat.config").get()
+  local ctx = require("parley.context")
+  local cfg = require("parley.config").get()
   local path = ctx.get_filepath()
   local fname = ctx.get_filename()
 
   if path == "" or fname == "" then
-    vim.notify("No buffer to attach", vim.log.levels.WARN, { title = "Ollama Chat" })
+    vim.notify("No buffer to attach", vim.log.levels.WARN, { title = "Parley" })
     return false
   end
 
   -- Check for duplicates
   for _, existing in ipairs(chips) do
     if existing.type == "buffer" and existing.path == path then
-      vim.notify("Buffer already attached", vim.log.levels.INFO, { title = "Ollama Chat" })
+      vim.notify("Buffer already attached", vim.log.levels.INFO, { title = "Parley" })
       return false
     end
   end
@@ -99,7 +99,7 @@ function M.add_buffer()
   }
 
   table.insert(chips, chip)
-  vim.notify(string.format("Attached: %s", chip.label), vim.log.levels.INFO, { title = "Ollama Chat" })
+  vim.notify(string.format("Attached: %s", chip.label), vim.log.levels.INFO, { title = "Parley" })
   return true
 end
 
@@ -109,7 +109,7 @@ function M.remove(index)
   if chips[index] then
     local label = chips[index].label
     table.remove(chips, index)
-    vim.notify(string.format("Removed: %s", label), vim.log.levels.INFO, { title = "Ollama Chat" })
+    vim.notify(string.format("Removed: %s", label), vim.log.levels.INFO, { title = "Parley" })
   end
 end
 
@@ -125,7 +125,7 @@ function M.remove_by_id(id)
 end
 
 ---Get all chips
----@return OllamaChat.ContextChip[]
+---@return Parley.ContextChip[]
 function M.get_all()
   return chips
 end
@@ -134,7 +134,7 @@ end
 function M.clear()
   local count = #chips
   chips = {}
-  vim.notify(string.format("Cleared %d context chip(s)", count), vim.log.levels.INFO, { title = "Ollama Chat" })
+  vim.notify(string.format("Cleared %d context chip(s)", count), vim.log.levels.INFO, { title = "Parley" })
 end
 
 ---Build the full context string from all chips for the LLM
@@ -144,7 +144,7 @@ function M.build_context()
     return ""
   end
 
-  local ctx = require("ollama-chat.context")
+  local ctx = require("parley.context")
   local ft = ctx.get_filetype()
   local parts = {}
 

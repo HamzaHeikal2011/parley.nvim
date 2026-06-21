@@ -1,6 +1,6 @@
 local M = {}
 
-local config = require("ollama-chat.config")
+local config = require("parley.config")
 
 ---HTTP client using vim.system() + curl.
 ---Zero Neovim plugin dependencies — curl is required (Ollama users have it).

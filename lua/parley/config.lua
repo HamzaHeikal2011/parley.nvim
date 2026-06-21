@@ -1,4 +1,4 @@
----@class OllamaChat.Config
+---@class Parley.Config
 ---@field url string Ollama server URL
 ---@field model string Default model name
 ---@field temperature number Sampling temperature (0.0-2.0)
@@ -7,9 +7,9 @@
 ---@field panel_width number Panel width ratio (0.0-1.0)
 ---@field panel_position "right" | "left" Panel position
 ---@field max_context_lines number Max lines of context to auto-attach
----@field keymaps OllamaChat.Keymaps Keybinding overrides
+---@field keymaps Parley.Keymaps Keybinding overrides
 
----@class OllamaChat.Keymaps
+---@class Parley.Keymaps
 ---@field toggle string Toggle chat panel
 ---@field attach_selection string Attach visual selection
 ---@field attach_buffer string Attach entire buffer
@@ -25,7 +25,7 @@
 
 local M = {}
 
----@type OllamaChat.Config
+---@type Parley.Config
 M.defaults = {
   url = "http://127.0.0.1:11434",
   model = "qwen2.5-coder:7b",
@@ -58,7 +58,7 @@ M.defaults = {
   },
 }
 
----@type OllamaChat.Config
+---@type Parley.Config
 M.current = {}
 
 ---Validate a user config table
@@ -77,21 +77,21 @@ function M.validate(cfg)
     max_context_lines = { cfg.max_context_lines, "number", true },
   })
   if not ok then
-    return false, "ollama-chat config: " .. tostring(err)
+    return false, "parley config: " .. tostring(err)
   end
   return true, nil
 end
 
 ---Merge user opts into defaults with validation
 ---@param opts table|nil
----@return OllamaChat.Config
+---@return Parley.Config
 function M.merge(opts)
   opts = opts or {}
   local merged = vim.tbl_deep_extend("force", M.defaults, opts)
   local ok, err = M.validate(merged)
   if not ok then
-    vim.notify(err, vim.log.levels.ERROR, { title = "ollama-chat" })
-    vim.notify("Falling back to default config", vim.log.levels.WARN, { title = "ollama-chat" })
+    vim.notify(err, vim.log.levels.ERROR, { title = "parley" })
+    vim.notify("Falling back to default config", vim.log.levels.WARN, { title = "parley" })
     merged = vim.deepcopy(M.defaults)
   end
   M.current = merged
@@ -99,7 +99,7 @@ function M.merge(opts)
 end
 
 ---Get the current config (or default if not setup yet)
----@return OllamaChat.Config
+---@return Parley.Config
 function M.get()
   if M.current and M.current.url then
     return M.current
