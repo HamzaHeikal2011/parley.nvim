@@ -81,6 +81,7 @@ function M.open()
   vim.wo[chat_win].signcolumn = "no"
   vim.wo[chat_win].cursorline = false
   vim.wo[chat_win].winbar = M.render_winbar()
+  vim.wo[chat_win].statusline = M.render_statusline()
 
   -- Create namespace for extmarks
   state.ns_id = vim.api.nvim_create_namespace("parley")
@@ -101,6 +102,14 @@ function M.open()
     callback = function()
       state.is_visible = false
       state.winnr = nil
+    end,
+  })
+
+  -- Auto-update status line on cursor movement and mode changes
+  vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "ModeChanged" }, {
+    buffer = buf,
+    callback = function()
+      M.update_statusline()
     end,
   })
 end
@@ -175,6 +184,46 @@ end
 function M.update_winbar()
   if state.winnr and vim.api.nvim_win_is_valid(state.winnr) then
     vim.wo[state.winnr].winbar = M.render_winbar()
+  end
+end
+
+---Render the status line (bottom hint bar) with keybind info
+---@return string
+function M.render_statusline()
+  local cfg = require("parley.config").get()
+  local km = cfg.keymaps
+  local chat = require("parley.chat")
+
+  -- Build key hints
+  local hints = {}
+
+  -- Always-visible: close, clear, stop
+  table.insert(hints, string.format("%%#ParleyHint#%s%%* Close", km.close or "q"))
+  table.insert(hints, string.format("%%#ParleyHint#%s%%* Clear", km.clear_conversation or "<C-l>"))
+  table.insert(hints, string.format("%%#ParleyHint#%s%%* Stop", km.stop or "<C-c>"))
+
+  -- Code block actions (contextual — shown when cursor is on a code block)
+  table.insert(hints, string.format("%%#ParleyHintAction#%s%%* Apply", km.apply_code or "<C-y>"))
+  table.insert(hints, string.format("%%#ParleyHintAction#%s%%* Copy", km.copy_code or "<C-d>"))
+  table.insert(hints, string.format("%%#ParleyHintAction#%s%%* Diff", km.show_diff or "<C-f>"))
+
+  -- Status indicator
+  local status_hl = chat.is_active() and "ParleyStatusWorking" or "ParleyStatusIdle"
+  local status_text = chat.is_active() and "⏳ Generating..." or "Ready"
+
+  local hint_str = table.concat(hints, " │ ")
+  return string.format(
+    " %s │ %%#%s#%%* %s",
+    hint_str,
+    status_hl,
+    status_text
+  )
+end
+
+---Update the status line (e.g. when status changes)
+function M.update_statusline()
+  if state.winnr and vim.api.nvim_win_is_valid(state.winnr) then
+    vim.wo[state.winnr].statusline = M.render_statusline()
   end
 end
 

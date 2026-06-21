@@ -35,6 +35,10 @@ function M.setup()
   -- Separator
   vim.api.nvim_set_hl(0, "ParleySeparator", { link = "WinSeparator", default = true })
 
+  -- Status line hints
+  vim.api.nvim_set_hl(0, "ParleyHint", { link = "Comment", default = true })
+  vim.api.nvim_set_hl(0, "ParleyHintAction", { link = "Function", default = true })
+
   -- Input area
   vim.api.nvim_set_hl(0, "ParleyInputPrompt", { link = "Identifier", default = true })
 end

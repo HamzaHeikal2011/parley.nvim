@@ -131,6 +131,8 @@ function M.send_message(text)
       end
       accumulated_response = {}
 
+      panel.update_winbar()
+      panel.update_statusline()
       conversation.render()
       conversation.scroll_to_bottom()
     end,
@@ -140,6 +142,7 @@ function M.send_message(text)
       accumulated_response = {}
       conversation.remove_streaming_indicator()
       panel.update_winbar()
+      panel.update_statusline()
       vim.notify("Error: " .. err, vim.log.levels.ERROR, { title = "Parley" })
     end
   )
