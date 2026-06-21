@@ -25,6 +25,11 @@ function M.render()
   local extmarks = {}
   -- Track separator positions: {line = 0-based lnum, type = "user" | "assistant"}
   local separators = {}
+  -- Track message block regions for background highlighting: {start_line, end_line, role}
+  local msg_blocks = {}
+  -- Track the start of the current message block
+  local block_start = nil
+  local block_role = nil
 
   for _, msg in ipairs(messages) do
     if msg.role == "system" then
@@ -33,6 +38,11 @@ function M.render()
     end
 
     if msg.role == "user" then
+      -- Close the previous block
+      if block_start and block_role then
+        table.insert(msg_blocks, { start_line = block_start, end_line = #lines - 2, role = block_role })
+      end
+
       -- Add separator before user message (except for the very first message)
       if #lines > 0 then
         table.insert(separators, { line = #lines, type = "user" })
@@ -41,6 +51,8 @@ function M.render()
       -- User message header
       table.insert(lines, "👤 You")
       table.insert(lines, "")
+      block_start = #lines - 1  -- 0-based: the header line
+      block_role = "user"
 
       -- Extract context chips from the message (they're prepended before the actual user text)
       local user_text = msg.content
@@ -84,12 +96,19 @@ function M.render()
       table.insert(lines, "")
 
     elseif msg.role == "assistant" then
+      -- Close the previous block
+      if block_start and block_role then
+        table.insert(msg_blocks, { start_line = block_start, end_line = #lines - 2, role = block_role })
+      end
+
       -- Add separator before assistant message
       table.insert(separators, { line = #lines, type = "assistant" })
 
       -- Assistant message header
       table.insert(lines, "🦙 Assistant")
       table.insert(lines, "")
+      block_start = #lines - 1  -- 0-based: the header line
+      block_role = "assistant"
 
       -- Parse markdown and extract code blocks
       local in_code = false
@@ -137,6 +156,11 @@ function M.render()
     ::continue::
   end
 
+  -- Close the last block
+  if block_start and block_role then
+    table.insert(msg_blocks, { start_line = block_start, end_line = #lines - 1, role = block_role })
+  end
+
   -- If no messages yet, show a welcome message
   if #messages <= 1 then  -- only system prompt
     local cfg = require("parley.config").get()
@@ -162,21 +186,39 @@ function M.render()
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
 
-  -- Apply highlights and dynamic separators
-  M.apply_highlights(buf, ns_id, lines, separators)
+  -- Apply highlights, dynamic separators, and message block backgrounds
+  M.apply_highlights(buf, ns_id, lines, separators, msg_blocks)
 end
 
----Apply syntax highlights and dynamic separators to rendered lines
+---Apply syntax highlights, dynamic separators, and message block backgrounds
 ---@param bufnr number
 ---@param ns_id number
 ---@param lines string[]
 ---@param separators table[]
-function M.apply_highlights(bufnr, ns_id, lines, separators)
+---@param msg_blocks table[]
+function M.apply_highlights(bufnr, ns_id, lines, separators, msg_blocks)
   -- Get the panel width for dynamic separator rendering
   local win = panel.get_winnr()
   local panel_width = win and vim.api.nvim_win_get_width(win) or 50
 
-  -- Apply separator extmarks first (they sit on empty lines between messages)
+  -- Apply message block background highlights first (lowest priority, behind text)
+  for _, block in ipairs(msg_blocks) do
+    local hl_group = block.role == "assistant" and "ParleyAssistantBg" or "ParleyUserBg"
+    -- Use line_hl_group on the first line of the block to cover the full line width
+    -- This is more efficient than setting an extmark on every line
+    local start_lnum = math.max(0, block.start_line)
+    local end_lnum = math.min(#lines - 1, block.end_line)
+    if start_lnum <= end_lnum then
+      vim.api.nvim_buf_set_extmark(bufnr, ns_id, start_lnum, 0, {
+        end_row = end_lnum + 1,
+        end_col = 0,
+        hl_group = hl_group,
+        priority = 5,
+      })
+    end
+  end
+
+  -- Apply separator extmarks (they sit on empty lines between messages)
   for _, sep in ipairs(separators) do
     local lnum = sep.line
     if lnum < #lines then

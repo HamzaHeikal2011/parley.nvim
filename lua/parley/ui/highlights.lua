@@ -10,10 +10,12 @@ function M.setup()
 
   -- User messages
   vim.api.nvim_set_hl(0, "ParleyUser", { link = "Title", default = true })
+  vim.api.nvim_set_hl(0, "ParleyUserBg", { link = "CursorLine", default = true })
   vim.api.nvim_set_hl(0, "ParleyUserPrefix", { link = "Identifier", default = true })
 
   -- Assistant messages
   vim.api.nvim_set_hl(0, "ParleyAssistant", { link = "Normal", default = true })
+  vim.api.nvim_set_hl(0, "ParleyAssistantBg", { link = "CursorLine", default = true })
   vim.api.nvim_set_hl(0, "ParleyAssistantPrefix", { link = "Special", default = true })
 
   -- Context chips
