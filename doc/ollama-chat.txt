@@ -1,0 +1,200 @@
+*ollama-chat.txt*  Side-by-side Ollama chat panel for Neovim
+
+Author:  Hamza
+License: MIT
+
+==============================================================================
+INTRODUCTION                                          *ollama-chat*
+
+A Neovim plugin that provides a persistent side-panel chat interface
+for Ollama local LLM models. Inspired by Cursor's side panel, Claude Code's
+VS Code extension, and Windsurf's context chips.
+
+Features:
+- Persistent right-side panel (not a floating window)
+- Visual selection auto-attachment as context chips
+- Streaming responses with markdown rendering
+- Inline code block actions: Apply, Copy, Diff
+- Per-buffer conversation sessions
+- Zero plugin dependencies (only requires curl + Neovim 0.10+)
+- Works out of the box, no setup() required
+
+==============================================================================
+REQUIREMENTS                                        *ollama-chat-requirements*
+
+- Neovim >= 0.10
+- curl (Ollama users typically have this)
+- Ollama server running locally
+
+==============================================================================
+INSTALLATION                                        *ollama-chat-installation*
+
+Using lazy.nvim:
+>lua
+  {
+    "yourname/ollama-chat.nvim",
+    event = "VeryLazy",
+    opts = {
+      url = "http://127.0.0.1:11434",
+      model = "qwen2.5-coder:7b",
+    },
+    keys = {
+      { "<leader>oc", "<cmd>OllamaChat<cr>", desc = "Ollama Chat" },
+      { "<leader>oa", "<cmd>OllamaChatAttach<cr>", desc = "Attach selection", mode = "v" },
+      { "<leader>ob", "<cmd>OllamaChatAttachBuffer<cr>", desc = "Attach buffer" },
+      { "<leader>ox", "<cmd>OllamaChatClearContext<cr>", desc = "Clear context" },
+      { "<leader>om", "<cmd>OllamaChatModel<cr>", desc = "Switch model" },
+    },
+  }
+<
+
+==============================================================================
+CONFIGURATION                                       *ollama-chat-config*
+
+Full configuration options:
+>lua
+  opts = {
+    url = "http://127.0.0.1:11434",
+    model = "qwen2.5-coder:7b",
+    temperature = 0.2,
+    num_ctx = 8192,
+    panel_width = 0.3,         -- 30% of editor width
+    panel_position = "right",  -- "right" or "left"
+    max_context_lines = 100,
+    system_prompt = "...",
+
+    keymaps = {
+      toggle = "<leader>oc",
+      attach_selection = "<leader>oa",
+      attach_buffer = "<leader>ob",
+      clear_context = "<leader>ox",
+      switch_model = "<leader>om",
+      submit = "<C-CR>",
+      stop = "<C-c>",
+      close = "q",
+      clear_conversation = "<C-l>",
+      apply_code = "<C-y>",
+      copy_code = "<C-d>",
+      show_diff = "<C-f>",
+    },
+  }
+<
+
+==============================================================================
+COMMANDS                                            *ollama-chat-commands*
+
+:OllamaChat [subcommand]                            *:OllamaChat*
+    Main command. Subcommands:
+    - open (default) — Open the chat panel
+    - close           — Close the chat panel
+    - toggle          — Toggle the chat panel
+    - input           — Open the input area
+    - stop            — Stop generation
+    - clear           — Clear conversation
+    - model           — Switch model
+    - attach          — Attach selection/buffer
+    - context_clear   — Clear context chips
+
+:OllamaChatAttach                                   *:OllamaChatAttach*
+    Attach current visual selection as a context chip.
+
+:OllamaChatAttachBuffer                             *:OllamaChatAttachBuffer*
+    Attach the entire current buffer as a context chip.
+
+:OllamaChatClearContext                             *:OllamaChatClearContext*
+    Remove all context chips.
+
+:OllamaChatModel                                    *:OllamaChatModel*
+    Select a different Ollama model.
+
+:OllamaChatStop                                     *:OllamaChatStop*
+    Stop the current generation.
+
+:OllamaChatClear                                    *:OllamaChatClear*
+    Clear the conversation history.
+
+==============================================================================
+KEYMAPS                                             *ollama-chat-keymaps*
+
+Default keymaps (in normal mode unless specified):
+
+<leader>oc          Toggle chat panel
+<leader>oa          Attach visual selection (visual mode)
+<leader>ob          Attach entire buffer
+<leader>ox          Clear context chips
+<leader>om          Switch model
+
+Inside the chat panel:
+q                   Close panel
+<C-l>               Clear conversation
+<C-c>               Stop generation
+i or a              Open input area
+<C-y>               Apply code block under cursor
+<C-d>               Copy code block under cursor
+<C-f>               Show diff for code block under cursor
+
+Inside the input area:
+<CR>                Submit (single line) or new line (multi-line)
+<C-CR>              Always submit
+<Esc>               Close input
+<C-c>               Stop generation
+
+==============================================================================
+PLUG MAPPINGS                                       *ollama-chat-plug*
+
+<Plug>(OllamaChat)              Toggle chat panel
+<Plug>(OllamaChatAttach)        Attach selection (visual mode)
+<Plug>(OllamaChatAttachBuffer)  Attach buffer
+<Plug>(OllamaChatClearContext)  Clear context
+<Plug>(OllamaChatModel)         Switch model
+
+Example custom mapping:
+>lua
+  vim.keymap.set("n", "<C-s>", "<Plug>(OllamaChat)")
+  vim.keymap.set("v", "<C-s>", "<Plug>(OllamaChatAttach)")
+<
+
+==============================================================================
+HEALTH CHECK                                        *ollama-chat-health*
+
+Run :checkhealth ollama-chat to verify:
+- Neovim version
+- curl availability
+- Ollama server reachability
+- Available models
+
+==============================================================================
+WORKFLOW                                            *ollama-chat-workflow*
+
+1. Select code in visual mode
+2. Press <leader>oa to attach selection (shows as a chip)
+3. Press <leader>oc to open the chat panel
+4. Press 'i' to open the input area
+5. Type your question
+6. Press <CR> (single line) or <C-CR> (multi-line) to send
+7. Response streams in the panel
+8. Navigate to a code block and press:
+   - <C-y> to Apply the code
+   - <C-d> to Copy to clipboard
+   - <C-f> to show a Diff
+9. Keep the conversation going with follow-up questions
+
+==============================================================================
+API                                                 *ollama-chat-api*
+
+Lua API for programmatic use:
+>lua
+  local chat = require("ollama-chat")
+
+  chat.toggle()                     -- Toggle panel
+  chat.attach_selection()           -- Attach visual selection
+  chat.attach_buffer()              -- Attach buffer
+  chat.send_message("Explain this") -- Send a message
+  chat.stop()                       -- Stop generation
+  chat.clear()                      -- Clear conversation
+  chat.switch_model()               -- Switch model
+  chat.status()                     -- "IDLE" or "WORKING"
+<
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:

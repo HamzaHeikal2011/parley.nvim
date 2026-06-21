@@ -1,0 +1,275 @@
+local M = {}
+
+local config = require("ollama-chat.config")
+local http = require("ollama-chat.http")
+local chat = require("ollama-chat.chat")
+local panel = require("ollama-chat.ui.panel")
+local conversation = require("ollama-chat.ui.conversation")
+local input = require("ollama-chat.ui.input")
+local highlights = require("ollama-chat.ui.highlights")
+
+---@type fun()|nil
+local cancel_current = nil
+
+---Setup the plugin
+---@param opts table|nil User configuration
+function M.setup(opts)
+  -- Merge config
+  config.merge(opts)
+
+  -- Set up highlights
+  highlights.setup()
+
+  -- Set up autocommands
+  M.setup_autocmds()
+end
+
+---Set up autocommands
+function M.setup_autocmds()
+  local group = vim.api.nvim_create_augroup("OllamaChat", { clear = true })
+
+  -- Re-apply highlights when colorscheme changes
+  vim.api.nvim_create_autocmd("ColorScheme", {
+    group = group,
+    callback = function()
+      highlights.setup()
+    end,
+  })
+end
+
+---Toggle the chat panel
+function M.toggle()
+  panel.toggle()
+end
+
+---Open the chat panel
+function M.open()
+  panel.open()
+end
+
+---Close the chat panel
+function M.close()
+  panel.close()
+end
+
+---Attach the current visual selection as context
+function M.attach_selection()
+  local chips = require("ollama-chat.context_chips")
+  chips.add_selection()
+end
+
+---Attach the current buffer as context
+function M.attach_buffer()
+  local chips = require("ollama-chat.context_chips")
+  chips.add_buffer()
+end
+
+---Clear all context chips
+function M.clear_context()
+  local chips = require("ollama-chat.context_chips")
+  chips.clear()
+end
+
+---Open the input area
+function M.input()
+  if not panel.is_visible() then
+    panel.open()
+  end
+  input.open()
+end
+
+---Send a message to Ollama
+---@param text string The user's message text
+function M.send_message(text)
+  if not text or text == "" then return end
+
+  -- Ensure panel is open
+  if not panel.is_visible() then
+    panel.open()
+  end
+
+  -- Build the full message with context
+  local full_message = chat.build_user_message(text)
+
+  -- Add user message to session
+  chat.add_message(nil, "user", full_message)
+
+  -- Re-render to show the user message
+  conversation.render()
+  conversation.scroll_to_bottom()
+
+  -- Show streaming indicator
+  conversation.show_streaming_indicator()
+
+  -- Get the session for the API call
+  local session = chat.get_session()
+  local messages = chat.get_messages()
+
+  -- Start streaming
+  cancel_current = http.stream_chat(
+    messages,
+    session.model,
+    nil,  -- use default options
+    -- on_chunk
+    function(token)
+      conversation.remove_streaming_indicator()
+      conversation.append_stream_token(token)
+    end,
+    -- on_done
+    function()
+      cancel_current = nil
+      panel.update_winbar()
+
+      -- Add the assistant's full response to the session
+      -- We need to collect all tokens — for now, re-render from session
+      -- The session already has the user message; we need to add the assistant response
+      -- Since we're streaming, we collect tokens in a buffer
+      -- Actually, let's just re-render the whole conversation
+      -- The assistant message will be added below
+
+      -- Collect the full response from the rendered buffer
+      -- For simplicity, we'll add a placeholder and re-render
+      -- In a production version, we'd accumulate tokens
+      chat.add_message(nil, "assistant", M._collect_response())
+      conversation.render()
+      conversation.scroll_to_bottom()
+    end,
+    -- on_error
+    function(err)
+      cancel_current = nil
+      conversation.remove_streaming_indicator()
+      panel.update_winbar()
+      vim.notify("Error: " .. err, vim.log.levels.ERROR, { title = "Ollama Chat" })
+    end
+  )
+
+  -- Store cancel function in session
+  chat.set_cancel_fn(nil, function()
+    if cancel_current then
+      cancel_current()
+      cancel_current = nil
+    end
+  end)
+
+  panel.update_winbar()
+end
+
+---Collect the assistant's response from the chat buffer
+---This is a helper to extract the streamed response text
+---@return string
+function M._collect_response()
+  local buf = panel.get_bufnr()
+  if not buf or not vim.api.nvim_buf_is_valid(buf) then return "" end
+
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local response_lines = {}
+  local in_assistant = false
+  local in_code = false
+
+  for _, line in ipairs(lines) do
+    if line:match("^## 🦙 Assistant") then
+      in_assistant = true
+      goto continue
+    end
+
+    if in_assistant then
+      if line:match("^─+$") then
+        -- End of assistant message
+        break
+      end
+
+      if line:match("^```") then
+        in_code = not in_code
+        table.insert(response_lines, line)
+        goto continue
+      end
+
+      -- Skip action button lines
+      if line:match("%[Apply%]") or line:match("%[Copy%]") or line:match("%[Diff%]") then
+        goto continue
+      end
+
+      -- Skip streaming indicator
+      if line:match("⏳") then
+        goto continue
+      end
+
+      table.insert(response_lines, line)
+    end
+
+    ::continue::
+  end
+
+  -- Trim leading/trailing empty lines
+  while #response_lines > 0 and response_lines[1] == "" do
+    table.remove(response_lines, 1)
+  end
+  while #response_lines > 0 and response_lines[#response_lines] == "" do
+    table.remove(response_lines)
+  end
+
+  return table.concat(response_lines, "\n")
+end
+
+---Stop the current generation
+function M.stop()
+  chat.cancel()
+  if cancel_current then
+    cancel_current()
+    cancel_current = nil
+  end
+  conversation.remove_streaming_indicator()
+  panel.update_winbar()
+  vim.notify("Generation stopped", vim.log.levels.INFO, { title = "Ollama Chat" })
+end
+
+---Clear the conversation
+function M.clear()
+  chat.clear_session()
+  conversation.render()
+  vim.notify("Conversation cleared", vim.log.levels.INFO, { title = "Ollama Chat" })
+end
+
+---Switch the model
+function M.switch_model()
+  local cfg = config.get()
+
+  http.list_models(cfg.url, function(models, err)
+    if err then
+      vim.notify("Failed to list models: " .. err, vim.log.levels.ERROR, { title = "Ollama Chat" })
+      return
+    end
+
+    if not models or #models == 0 then
+      vim.notify("No models found. Is Ollama running?", vim.log.levels.WARN, { title = "Ollama Chat" })
+      return
+    end
+
+    vim.ui.select(models, {
+      prompt = "Select a model:",
+      format_item = function(item)
+        if item == chat.get_model() then
+          return item .. " (current)"
+        end
+        return item
+      end,
+    }, function(selected)
+      if selected then
+        chat.set_model(nil, selected)
+        panel.update_winbar()
+        vim.notify("Model: " .. selected, vim.log.levels.INFO, { title = "Ollama Chat" })
+      end
+    end)
+  end)
+end
+
+---Get the current status
+---@return "IDLE" | "WORKING"
+function M.status()
+  if chat.is_active() then
+    return "WORKING"
+  end
+  return "IDLE"
+end
+
+return M
