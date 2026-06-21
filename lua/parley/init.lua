@@ -105,6 +105,9 @@ function M.send_message(text)
   local session = chat.get_session()
   local messages = chat.get_messages()
 
+  -- Accumulate streamed tokens for session storage
+  local accumulated_response = {}
+
   -- Start streaming
   cancel_current = http.stream_chat(
     messages,
@@ -114,29 +117,27 @@ function M.send_message(text)
     function(token)
       conversation.remove_streaming_indicator()
       conversation.append_stream_token(token)
+      table.insert(accumulated_response, token)
     end,
     -- on_done
     function()
       cancel_current = nil
       panel.update_winbar()
 
-      -- Add the assistant's full response to the session
-      -- We need to collect all tokens — for now, re-render from session
-      -- The session already has the user message; we need to add the assistant response
-      -- Since we're streaming, we collect tokens in a buffer
-      -- Actually, let's just re-render the whole conversation
-      -- The assistant message will be added below
+      -- Store the full accumulated response in the session
+      local full_response = table.concat(accumulated_response, "")
+      if full_response ~= "" then
+        chat.add_message(nil, "assistant", full_response)
+      end
+      accumulated_response = {}
 
-      -- Collect the full response from the rendered buffer
-      -- For simplicity, we'll add a placeholder and re-render
-      -- In a production version, we'd accumulate tokens
-      chat.add_message(nil, "assistant", M._collect_response())
       conversation.render()
       conversation.scroll_to_bottom()
     end,
     -- on_error
     function(err)
       cancel_current = nil
+      accumulated_response = {}
       conversation.remove_streaming_indicator()
       panel.update_winbar()
       vim.notify("Error: " .. err, vim.log.levels.ERROR, { title = "Parley" })
@@ -152,63 +153,6 @@ function M.send_message(text)
   end)
 
   panel.update_winbar()
-end
-
----Collect the assistant's response from the chat buffer
----This is a helper to extract the streamed response text
----@return string
-function M._collect_response()
-  local buf = panel.get_bufnr()
-  if not buf or not vim.api.nvim_buf_is_valid(buf) then return "" end
-
-  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  local response_lines = {}
-  local in_assistant = false
-  local in_code = false
-
-  for _, line in ipairs(lines) do
-    if line:match("^## 🦙 Assistant") then
-      in_assistant = true
-      goto continue
-    end
-
-    if in_assistant then
-      if line:match("^─+$") then
-        -- End of assistant message
-        break
-      end
-
-      if line:match("^```") then
-        in_code = not in_code
-        table.insert(response_lines, line)
-        goto continue
-      end
-
-      -- Skip action button lines
-      if line:match("%[Apply%]") or line:match("%[Copy%]") or line:match("%[Diff%]") then
-        goto continue
-      end
-
-      -- Skip streaming indicator
-      if line:match("⏳") then
-        goto continue
-      end
-
-      table.insert(response_lines, line)
-    end
-
-    ::continue::
-  end
-
-  -- Trim leading/trailing empty lines
-  while #response_lines > 0 and response_lines[1] == "" do
-    table.remove(response_lines, 1)
-  end
-  while #response_lines > 0 and response_lines[#response_lines] == "" do
-    table.remove(response_lines)
-  end
-
-  return table.concat(response_lines, "\n")
 end
 
 ---Stop the current generation
