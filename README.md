@@ -26,7 +26,7 @@ Inspired by Cursor's side panel, Claude Code's VS Code extension, and Windsurf's
 
 ```lua
 {
-  "yourname/parley.nvim",
+  "HamzaHeikal2011/parley.nvim",
   event = "VeryLazy",
   opts = {
     url = "http://127.0.0.1:11434",

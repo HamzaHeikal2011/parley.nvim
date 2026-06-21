@@ -66,6 +66,11 @@ M.current = {}
 ---@return boolean ok
 ---@return string|nil err
 function M.validate(cfg)
+  -- vim.validate doesn't support enum tables, so check panel_position manually
+  if cfg.panel_position ~= nil and cfg.panel_position ~= "right" and cfg.panel_position ~= "left" then
+    return false, "panel_position: expected 'right' or 'left', got '" .. tostring(cfg.panel_position) .. "'"
+  end
+
   local ok, err = pcall(vim.validate, {
     url = { cfg.url, "string" },
     model = { cfg.model, "string" },
@@ -73,7 +78,6 @@ function M.validate(cfg)
     num_ctx = { cfg.num_ctx, "number", true },
     system_prompt = { cfg.system_prompt, "string", true },
     panel_width = { cfg.panel_width, "number", true },
-    panel_position = { cfg.panel_position, { "right", "left" }, true },
     max_context_lines = { cfg.max_context_lines, "number", true },
   })
   if not ok then
