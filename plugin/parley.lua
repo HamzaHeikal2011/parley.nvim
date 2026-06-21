@@ -70,9 +70,13 @@ cmd("ParleyStop", function()
   require("parley").stop()
 end, { desc = "Stop current generation" })
 
-cmd("ParleyClear", function()
-  require("parley").clear()
-end, { desc = "Clear conversation" })
+cmd("ParleySave", function()
+  require("parley").save_session()
+end, { desc = "Save current session to disk" })
+
+cmd("ParleyLoad", function()
+  require("parley").load_session()
+end, { desc = "Load saved session from disk" })
 
 -- <Plug> mappings
 vim.keymap.set({ "n", "v" }, "<Plug>(Parley)", function()

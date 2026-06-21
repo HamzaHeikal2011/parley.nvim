@@ -35,6 +35,19 @@ function M.setup_autocmds()
       highlights.setup()
     end,
   })
+
+  -- Auto-save session when leaving a buffer
+  vim.api.nvim_create_autocmd("BufLeave", {
+    group = group,
+    callback = function()
+      local session = require("parley.session")
+      local chat = require("parley.chat")
+      local messages = chat.get_messages()
+      if #messages > 1 then
+        session.save()
+      end
+    end,
+  })
 end
 
 ---Toggle the chat panel
@@ -220,6 +233,18 @@ function M.status()
     return "WORKING"
   end
   return "IDLE"
+end
+
+---Save the current conversation session
+function M.save_session()
+  local session = require("parley.session")
+  session.save()
+end
+
+---Load a saved conversation session
+function M.load_session()
+  local session = require("parley.session")
+  session.load()
 end
 
 return M
