@@ -11,6 +11,9 @@ Inspired by Cursor's side panel, Claude Code's VS Code extension, and Windsurf's
 - **Streaming responses** with markdown rendering
 - **Inline code block actions** — Apply, Copy, Diff with single keypresses
 - **Per-buffer conversation sessions** — follow-up questions just work
+- **Always-visible status line** — keybind hints never leave the panel
+- **Animated typing indicator** — braille spinner during generation
+- **Conversation persistence** — auto-save/load sessions as JSON
 - **Zero plugin dependencies** — only requires `curl` + Neovim 0.10+
 - **Works out of the box** — no `setup()` call required
 
@@ -97,6 +100,8 @@ opts = {
 | `:ParleyModel` | Switch model |
 | `:ParleyStop` | Stop generation |
 | `:ParleyClear` | Clear conversation |
+| `:ParleySave` | Save current session to disk |
+| `:ParleyLoad` | Load saved session from disk |
 
 ## Health Check
 
