@@ -27,7 +27,6 @@ function M.get_or_create_buf()
   vim.bo[buf].modifiable = false
   vim.bo[buf].swapfile = false
   vim.bo[buf].bufhidden = "hide"
-  vim.bo[buf].wrap = true
 
   state.bufnr = buf
   return buf
