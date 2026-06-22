@@ -172,7 +172,7 @@ end
 function M.render_winbar()
   local chat = require("parley.chat")
   local model = chat.get_model()
-  local status = chat.is_active() and M.spinner_char .. " Working" or ""
+  local status = chat.is_active() and (M.spinner_char() .. " Working") or ""
   return string.format(
     " %%#ParleyTitle#🦙 Parley%%#ParleyBar# │ %%#ParleyModel#%s%s %%*",
     model,
